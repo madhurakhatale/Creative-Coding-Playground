@@ -1,0 +1,1 @@
+console.log("Creative Coding Playground loaded successfully!");

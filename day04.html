@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Mouse Trail</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #090909;
+            color: #f5f5f5;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .header {
+            position: fixed;
+            top: 28px;
+            left: 35px;
+            z-index: 10;
+        }
+
+        .header .number {
+            font-size: 11px;
+            letter-spacing: 3px;
+            color: #9b8cff;
+            margin-bottom: 8px;
+        }
+
+        .header h1 {
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
+        .back {
+            position: fixed;
+            top: 30px;
+            right: 35px;
+            z-index: 10;
+
+            color: #9a9a9a;
+            text-decoration: none;
+            font-size: 12px;
+
+            border: 1px solid #292929;
+            padding: 9px 14px;
+
+            transition: 0.3s ease;
+        }
+
+        .back:hover {
+            color: #f5f5f5;
+            border-color: #9b8cff;
+        }
+
+        .info {
+            position: fixed;
+            bottom: 30px;
+            left: 35px;
+            z-index: 10;
+        }
+
+        .info h2 {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 7px;
+        }
+
+        .info p {
+            font-size: 12px;
+            color: #777;
+            letter-spacing: 0.3px;
+        }
+
+        @media (max-width: 600px) {
+            .header {
+                left: 20px;
+                top: 20px;
+            }
+
+            .back {
+                right: 20px;
+                top: 20px;
+            }
+
+            .info {
+                left: 20px;
+                bottom: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="trailCanvas"></canvas>
+
+    <div class="header">
+        <div class="number">CREATIVE CODING / 04</div>
+    </div>
+
+    <a href="index.html" class="back">← Back</a>
+
+    <div class="info">
+        <h2>Mouse Trail</h2>
+        <p>A fluid trail following the movement of the cursor.</p>
+    </div>
+
+
+    <script>
+
+        // --------------------------------
+        // CANVAS SETUP
+        // --------------------------------
+
+        const canvas = document.getElementById("trailCanvas");
+        const ctx = canvas.getContext("2d");
+
+        let width;
+        let height;
+
+
+        // --------------------------------
+        // MOUSE
+        // --------------------------------
+
+        const mouse = {
+            x: -100,
+            y: -100
+        };
+
+        const smoothMouse = {
+            x: -100,
+            y: -100
+        };
+
+
+        // --------------------------------
+        // TRAIL
+        // --------------------------------
+
+        const trail = [];
+
+        const trailLength = 45;
+
+
+        // --------------------------------
+        // RESIZE
+        // --------------------------------
+
+        function resizeCanvas() {
+
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+
+        }
+
+        window.addEventListener("resize", resizeCanvas);
+
+
+        // --------------------------------
+        // MOUSE MOVE
+        // --------------------------------
+
+        window.addEventListener("mousemove", (event) => {
+
+            mouse.x = event.clientX;
+            mouse.y = event.clientY;
+
+        });
+
+
+        // --------------------------------
+        // MOUSE LEAVE
+        // --------------------------------
+
+        window.addEventListener("mouseleave", () => {
+
+            mouse.x = -100;
+            mouse.y = -100;
+
+        });
+
+
+        // --------------------------------
+        // SMOOTH MOUSE
+        // --------------------------------
+
+        function updateSmoothMouse() {
+
+            smoothMouse.x +=
+                (mouse.x - smoothMouse.x) * 0.20;
+
+            smoothMouse.y +=
+                (mouse.y - smoothMouse.y) * 0.20;
+
+        }
+
+
+        // --------------------------------
+        // ADD TRAIL POINT
+        // --------------------------------
+
+        function addTrailPoint() {
+
+            // Add a new point only when
+            // the cursor has actually moved
+
+            if (trail.length === 0) {
+
+                trail.unshift({
+                    x: smoothMouse.x,
+                    y: smoothMouse.y
+                });
+
+                return;
+            }
+
+
+            const lastPoint = trail[0];
+
+            const dx =
+                smoothMouse.x - lastPoint.x;
+
+            const dy =
+                smoothMouse.y - lastPoint.y;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+
+            // Avoid unnecessary duplicate points
+
+            if (distance > 2) {
+
+                trail.unshift({
+                    x: smoothMouse.x,
+                    y: smoothMouse.y
+                });
+
+            }
+
+
+            // Limit trail length
+
+            if (trail.length > trailLength) {
+
+                trail.pop();
+
+            }
+        }
+
+
+        // --------------------------------
+        // DRAW SMOOTH TRAIL
+        // --------------------------------
+
+        function drawTrail() {
+
+            if (trail.length < 2) {
+                return;
+            }
+
+
+            for (let i = 0; i < trail.length - 1; i++) {
+
+                const current = trail[i];
+                const next = trail[i + 1];
+
+
+                const progress =
+                    i / trail.length;
+
+
+                // Fade toward the end
+
+                const opacity =
+                    (1 - progress) * 0.55;
+
+
+                // Thicker near cursor,
+                // thinner toward the end
+
+                const lineWidth =
+                    1.2 + (1 - progress) * 3.5;
+
+
+                ctx.beginPath();
+
+                ctx.moveTo(
+                    current.x,
+                    current.y
+                );
+
+                ctx.lineTo(
+                    next.x,
+                    next.y
+                );
+
+
+                ctx.strokeStyle =
+                    `rgba(155, 140, 255, ${opacity})`;
+
+                ctx.lineWidth = lineWidth;
+
+                ctx.lineCap = "round";
+
+                ctx.stroke();
+            }
+        }
+
+
+        // --------------------------------
+        // DRAW SUBTLE BLUE INNER TRAIL
+        // --------------------------------
+
+        function drawInnerTrail() {
+
+            if (trail.length < 2) {
+                return;
+            }
+
+
+            for (let i = 0; i < trail.length - 1; i++) {
+
+                const current = trail[i];
+                const next = trail[i + 1];
+
+
+                const progress =
+                    i / trail.length;
+
+
+                const opacity =
+                    (1 - progress) * 0.18;
+
+
+                ctx.beginPath();
+
+                ctx.moveTo(
+                    current.x,
+                    current.y
+                );
+
+                ctx.lineTo(
+                    next.x,
+                    next.y
+                );
+
+
+                ctx.strokeStyle =
+                    `rgba(110, 168, 255, ${opacity})`;
+
+                ctx.lineWidth = 1;
+
+                ctx.lineCap = "round";
+
+                ctx.stroke();
+            }
+        }
+
+
+        // --------------------------------
+        // CURSOR GLOW
+        // --------------------------------
+
+        function drawCursorGlow() {
+
+            if (mouse.x < 0) {
+                return;
+            }
+
+
+            const gradient =
+                ctx.createRadialGradient(
+                    smoothMouse.x,
+                    smoothMouse.y,
+                    0,
+                    smoothMouse.x,
+                    smoothMouse.y,
+                    55
+                );
+
+
+            gradient.addColorStop(
+                0,
+                "rgba(155, 140, 255, 0.16)"
+            );
+
+            gradient.addColorStop(
+                0.35,
+                "rgba(110, 168, 255, 0.07)"
+            );
+
+            gradient.addColorStop(
+                1,
+                "rgba(110, 168, 255, 0)"
+            );
+
+
+            ctx.fillStyle = gradient;
+
+            ctx.beginPath();
+
+            ctx.arc(
+                smoothMouse.x,
+                smoothMouse.y,
+                55,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fill();
+        }
+
+
+        // --------------------------------
+        // ANIMATION
+        // --------------------------------
+
+        function animate() {
+
+            // Smooth dark fade
+
+            ctx.fillStyle =
+                "rgba(9, 9, 9, 0.18)";
+
+            ctx.fillRect(
+                0,
+                0,
+                width,
+                height
+            );
+
+
+            updateSmoothMouse();
+
+            addTrailPoint();
+
+
+            // Draw continuous trail
+
+            drawTrail();
+
+            drawInnerTrail();
+
+            drawCursorGlow();
+
+
+            requestAnimationFrame(animate);
+        }
+
+
+        // --------------------------------
+        // START
+        // --------------------------------
+
+        resizeCanvas();
+
+        smoothMouse.x = width / 2;
+        smoothMouse.y = height / 2;
+
+        requestAnimationFrame(animate);
+
+    </script>
+
+</body>
+</html>

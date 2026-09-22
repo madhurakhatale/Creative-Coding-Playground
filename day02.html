@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Midnight Rain</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #07090d;
+            color: #f5f5f5;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .header {
+            position: fixed;
+            top: 28px;
+            left: 35px;
+            z-index: 10;
+        }
+
+        .header .number {
+            font-size: 11px;
+            letter-spacing: 3px;
+            color: #9b8cff;
+            margin-bottom: 8px;
+        }
+
+        .header h1 {
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
+        .back {
+            position: fixed;
+            top: 30px;
+            right: 35px;
+            z-index: 10;
+
+            color: #9a9a9a;
+            text-decoration: none;
+            font-size: 12px;
+
+            border: 1px solid #292929;
+            padding: 9px 14px;
+
+            transition: 0.3s ease;
+        }
+
+        .back:hover {
+            color: #f5f5f5;
+            border-color: #6ea8ff;
+        }
+
+        .info {
+            position: fixed;
+            bottom: 30px;
+            left: 35px;
+            z-index: 10;
+        }
+
+        .info h2 {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 7px;
+        }
+
+        .info p {
+            font-size: 12px;
+            color: #777;
+            letter-spacing: 0.3px;
+        }
+
+        @media (max-width: 600px) {
+            .header {
+                left: 20px;
+                top: 20px;
+            }
+
+            .back {
+                right: 20px;
+                top: 20px;
+            }
+
+            .info {
+                left: 20px;
+                bottom: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="rainCanvas"></canvas>
+
+    <div class="header">
+        <div class="number">CREATIVE CODING / 02</div>
+    </div>
+
+    <a href="index.html" class="back">← Back</a>
+
+    <div class="info">
+        <h2>Midnight Rain</h2>
+        <p>Wind, particles, interaction &amp; atmospheric light.</p>
+    </div>
+
+
+    <script>
+        const canvas = document.getElementById("rainCanvas");
+        const ctx = canvas.getContext("2d");
+
+        let width;
+        let height;
+
+        let rain = [];
+
+        const rainCount = 220;
+
+        // Mouse
+        const mouse = {
+            x: -1000,
+            y: -1000
+        };
+
+        // Wind
+        let wind = 0;
+        let targetWind = 0;
+
+        // Lightning
+        let lightning = 0;
+        let lightningTimer = 0;
+        let nextLightning = randomLightningTime();
+
+
+        // --------------------------------
+        // RANDOM LIGHTNING TIME
+        // --------------------------------
+
+        function randomLightningTime() {
+            return Math.random() * 7000 + 5000;
+        }
+
+
+        // --------------------------------
+        // CANVAS RESIZE
+        // --------------------------------
+
+        function resizeCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+
+            createRain();
+        }
+
+        window.addEventListener("resize", resizeCanvas);
+
+
+        // --------------------------------
+        // CREATE RAIN
+        // --------------------------------
+
+        function createRain() {
+
+            rain = [];
+
+            for (let i = 0; i < rainCount; i++) {
+
+                rain.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+
+                    length: Math.random() * 20 + 10,
+
+                    speed: Math.random() * 5 + 5,
+
+                    opacity: Math.random() * 0.45 + 0.15,
+
+                    thickness: Math.random() * 1 + 0.4,
+
+                    windOffset: Math.random() * 0.5 + 0.5
+                });
+            }
+        }
+
+
+        // --------------------------------
+        // MOUSE MOVEMENT
+        // --------------------------------
+
+        window.addEventListener("mousemove", (event) => {
+
+            mouse.x = event.clientX;
+            mouse.y = event.clientY;
+
+        });
+
+
+        // --------------------------------
+        // MOUSE LEAVE
+        // --------------------------------
+
+        window.addEventListener("mouseleave", () => {
+
+            mouse.x = -1000;
+            mouse.y = -1000;
+
+        });
+
+
+        // --------------------------------
+        // UPDATE WIND
+        // --------------------------------
+
+        function updateWind() {
+
+            // Slowly changing natural wind
+            if (Math.random() < 0.01) {
+
+                targetWind = (Math.random() - 0.5) * 2.5;
+
+            }
+
+            wind += (targetWind - wind) * 0.01;
+        }
+
+
+        // --------------------------------
+        // UPDATE RAIN
+        // --------------------------------
+
+        function updateRain(drop) {
+
+            // Natural wind movement
+            let windMovement = wind * drop.windOffset;
+
+
+            // Mouse interaction
+            const dx = drop.x - mouse.x;
+            const dy = drop.y - mouse.y;
+
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            const interactionRadius = 180;
+
+
+            if (distance < interactionRadius) {
+
+                const strength =
+                    (interactionRadius - distance) /
+                    interactionRadius;
+
+                windMovement +=
+                    (dx / (distance + 1)) *
+                    strength *
+                    2.5;
+            }
+
+
+            // Move rain
+            drop.x += windMovement;
+
+            drop.y += drop.speed;
+
+
+            // Reset rain when it leaves screen
+            if (drop.y > height + drop.length) {
+
+                drop.y = -drop.length;
+
+                drop.x = Math.random() * width;
+            }
+
+
+            // Horizontal wrapping
+            if (drop.x > width + 20) {
+                drop.x = -20;
+            }
+
+            if (drop.x < -20) {
+                drop.x = width + 20;
+            }
+        }
+
+
+        // --------------------------------
+        // DRAW RAIN
+        // --------------------------------
+
+        function drawRain(drop) {
+
+            const windAngle = wind * 0.08;
+
+            const endX =
+                drop.x + windAngle * drop.length;
+
+            const endY =
+                drop.y + drop.length;
+
+
+            ctx.beginPath();
+
+            ctx.moveTo(drop.x, drop.y);
+
+            ctx.lineTo(endX, endY);
+
+            ctx.strokeStyle =
+                `rgba(110, 168, 255, ${drop.opacity})`;
+
+            ctx.lineWidth = drop.thickness;
+
+            ctx.stroke();
+        }
+
+
+        // --------------------------------
+        // LIGHTNING
+        // --------------------------------
+
+        function updateLightning(deltaTime) {
+
+            lightningTimer += deltaTime;
+
+            if (lightningTimer >= nextLightning) {
+
+                lightning = 1;
+
+                lightningTimer = 0;
+
+                nextLightning = randomLightningTime();
+            }
+
+
+            // Smooth fade
+            if (lightning > 0) {
+
+                lightning *= 0.88;
+
+            }
+        }
+
+
+        // --------------------------------
+        // DRAW LIGHTNING
+        // --------------------------------
+
+        function drawLightning() {
+
+            if (lightning < 0.01) {
+                return;
+            }
+
+            const flashStrength = lightning * 0.14;
+
+            ctx.fillStyle =
+                `rgba(220, 235, 255, ${flashStrength})`;
+
+            ctx.fillRect(
+                0,
+                0,
+                width,
+                height
+            );
+        }
+
+
+        // --------------------------------
+        // ANIMATION
+        // --------------------------------
+
+        let lastTime = performance.now();
+
+        function animate(currentTime) {
+
+            const deltaTime =
+                currentTime - lastTime;
+
+            lastTime = currentTime;
+
+
+            // Dark trailing background
+            ctx.fillStyle = "rgba(7, 9, 13, 0.35)";
+
+            ctx.fillRect(
+                0,
+                0,
+                width,
+                height
+            );
+
+
+            updateWind();
+
+            updateLightning(deltaTime);
+
+
+            // Rain
+            for (let i = 0; i < rain.length; i++) {
+
+                updateRain(rain[i]);
+
+                drawRain(rain[i]);
+            }
+
+
+            // Lightning flash
+            drawLightning();
+
+
+            requestAnimationFrame(animate);
+        }
+
+
+        // --------------------------------
+        // START
+        // --------------------------------
+
+        resizeCanvas();
+
+        requestAnimationFrame(animate);
+
+    </script>
+
+</body>
+</html>

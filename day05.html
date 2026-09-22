@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Starfield</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #090909;
+            color: #f5f5f5;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* --------------------------------
+           HEADER — SAME AS DAY 04
+        -------------------------------- */
+
+        .header {
+            position: fixed;
+            top: 28px;
+            left: 35px;
+            z-index: 10;
+        }
+
+        .header .number {
+            font-size: 11px;
+            letter-spacing: 3px;
+            color: #9b8cff;
+            margin-bottom: 8px;
+        }
+
+        /* --------------------------------
+           BACK — SAME AS DAY 04
+        -------------------------------- */
+
+        .back {
+            position: fixed;
+            top: 30px;
+            right: 35px;
+            z-index: 10;
+
+            color: #9a9a9a;
+            text-decoration: none;
+            font-size: 12px;
+
+            border: 1px solid #292929;
+            padding: 9px 14px;
+
+            transition: 0.3s ease;
+        }
+
+        .back:hover {
+            color: #f5f5f5;
+            border-color: #9b8cff;
+        }
+
+        /* --------------------------------
+           INFO — SAME AS DAY 04
+        -------------------------------- */
+
+        .info {
+            position: fixed;
+            bottom: 30px;
+            left: 35px;
+            z-index: 10;
+        }
+
+        .info h2 {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 7px;
+        }
+
+        .info p {
+            font-size: 12px;
+            color: #777;
+            letter-spacing: 0.3px;
+        }
+
+        @media (max-width: 600px) {
+
+            .header {
+                left: 20px;
+                top: 20px;
+            }
+
+            .back {
+                right: 20px;
+                top: 20px;
+            }
+
+            .info {
+                left: 20px;
+                bottom: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="starCanvas"></canvas>
+
+
+    <!-- HEADER -->
+
+    <div class="header">
+
+        <div class="number">
+            CREATIVE CODING / 05
+        </div>
+
+    </div>
+
+
+    <!-- BACK BUTTON -->
+
+    <a href="index.html" class="back">
+        ← Back
+    </a>
+
+
+    <!-- INFO -->
+
+    <div class="info">
+
+        <h2>Starfield</h2>
+
+        <p>
+            A deep-space field with depth, motion and subtle parallax.
+        </p>
+
+    </div>
+
+
+    <script>
+
+        // --------------------------------
+        // CANVAS
+        // --------------------------------
+
+        const canvas =
+            document.getElementById("starCanvas");
+
+        const ctx =
+            canvas.getContext("2d");
+
+        let width;
+        let height;
+
+
+        // --------------------------------
+        // STAR SETTINGS
+        // --------------------------------
+
+        const STAR_COUNT = 260;
+
+        const stars = [];
+
+
+        // --------------------------------
+        // MOUSE
+        // --------------------------------
+
+        const mouse = {
+            x: 0,
+            y: 0
+        };
+
+        const smoothMouse = {
+            x: 0,
+            y: 0
+        };
+
+
+        // --------------------------------
+        // RESIZE
+        // --------------------------------
+
+        function resizeCanvas() {
+
+            width = canvas.width =
+                window.innerWidth;
+
+            height = canvas.height =
+                window.innerHeight;
+
+        }
+
+        resizeCanvas();
+
+        window.addEventListener(
+            "resize",
+            resizeCanvas
+        );
+
+
+        // --------------------------------
+        // MOUSE MOVE
+        // --------------------------------
+
+        window.addEventListener(
+            "mousemove",
+            function(event) {
+
+                mouse.x = event.clientX;
+                mouse.y = event.clientY;
+
+            }
+        );
+
+
+        // --------------------------------
+        // CREATE STAR
+        // --------------------------------
+
+        function createStar() {
+
+            const random =
+                Math.random();
+
+            let type;
+
+
+            /*
+                Color balance:
+
+                40% Violet
+                35% Blue
+                20% Grey
+                5% White
+            */
+
+            if (random < 0.40) {
+
+                type = "violet";
+
+            }
+            else if (random < 0.75) {
+
+                type = "blue";
+
+            }
+            else if (random < 0.95) {
+
+                type = "grey";
+
+            }
+            else {
+
+                type = "white";
+
+            }
+
+
+            return {
+
+                x:
+                    (Math.random() - 0.5)
+                    * width
+                    * 2.2,
+
+                y:
+                    (Math.random() - 0.5)
+                    * height
+                    * 2.2,
+
+                z:
+                    Math.random()
+                    * width,
+
+                size:
+                    Math.random() * 1.8
+                    + 0.6,
+
+                speed:
+                    Math.random() * 2.2
+                    + 0.8,
+
+                type: type
+
+            };
+
+        }
+
+
+        // --------------------------------
+        // INITIALIZE
+        // --------------------------------
+
+        for (
+            let i = 0;
+            i < STAR_COUNT;
+            i++
+        ) {
+
+            stars.push(
+                createStar()
+            );
+
+        }
+
+
+        // --------------------------------
+        // STAR COLOR
+        // --------------------------------
+
+        function getColor(
+            type,
+            alpha
+        ) {
+
+            if (type === "violet") {
+
+                return `rgba(
+                    155,
+                    140,
+                    255,
+                    ${alpha}
+                )`;
+
+            }
+
+            if (type === "blue") {
+
+                return `rgba(
+                    110,
+                    168,
+                    255,
+                    ${alpha}
+                )`;
+
+            }
+
+            if (type === "grey") {
+
+                return `rgba(
+                    170,
+                    170,
+                    180,
+                    ${alpha}
+                )`;
+
+            }
+
+            return `rgba(
+                245,
+                245,
+                245,
+                ${alpha}
+            )`;
+
+        }
+
+
+        // --------------------------------
+        // DRAW STAR
+        // --------------------------------
+
+        function drawStar(star) {
+
+            const centerX =
+                width / 2;
+
+            const centerY =
+                height / 2;
+
+
+            /*
+                Perspective
+            */
+
+            const scale =
+                500 /
+                (500 + star.z);
+
+
+            /*
+                Mouse parallax
+            */
+
+            const parallaxX =
+                (smoothMouse.x - centerX)
+                * 0.035
+                * scale;
+
+            const parallaxY =
+                (smoothMouse.y - centerY)
+                * 0.035
+                * scale;
+
+
+            /*
+                Screen position
+            */
+
+            const x =
+                centerX +
+                star.x * scale +
+                parallaxX;
+
+            const y =
+                centerY +
+                star.y * scale +
+                parallaxY;
+
+
+            /*
+                Size increases
+                as star comes closer
+            */
+
+            const depth =
+                1 -
+                star.z / width;
+
+
+            const radius =
+                star.size *
+                (0.55 + depth * 1.8);
+
+
+            /*
+                Brightness
+            */
+
+            const alpha =
+                0.25 +
+                depth * 0.75;
+
+
+            /*
+                Ignore outside
+            */
+
+            if (
+                x < -30 ||
+                x > width + 30 ||
+                y < -30 ||
+                y > height + 30
+            ) {
+
+                return;
+
+            }
+
+
+            // --------------------------------
+            // STAR GLOW
+            // --------------------------------
+
+            if (radius > 1.4) {
+
+                const glow =
+                    ctx.createRadialGradient(
+                        x,
+                        y,
+                        0,
+                        x,
+                        y,
+                        radius * 5
+                    );
+
+
+                glow.addColorStop(
+                    0,
+                    getColor(
+                        star.type,
+                        alpha * 0.18
+                    )
+                );
+
+                glow.addColorStop(
+                    1,
+                    getColor(
+                        star.type,
+                        0
+                    )
+                );
+
+
+                ctx.beginPath();
+
+                ctx.arc(
+                    x,
+                    y,
+                    radius * 5,
+                    0,
+                    Math.PI * 2
+                );
+
+                ctx.fillStyle = glow;
+
+                ctx.fill();
+
+            }
+
+
+            // --------------------------------
+            // STAR
+            // --------------------------------
+
+            ctx.beginPath();
+
+            ctx.arc(
+                x,
+                y,
+                radius,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fillStyle =
+                getColor(
+                    star.type,
+                    alpha
+                );
+
+            ctx.fill();
+
+
+            // --------------------------------
+            // STAR STREAK
+            // --------------------------------
+
+            if (depth > 0.55) {
+
+                const streak =
+                    depth * 8;
+
+                ctx.beginPath();
+
+                ctx.moveTo(
+                    x,
+                    y
+                );
+
+                ctx.lineTo(
+                    x,
+                    y + streak
+                );
+
+                ctx.strokeStyle =
+                    getColor(
+                        star.type,
+                        depth * 0.22
+                    );
+
+                ctx.lineWidth = 0.7;
+
+                ctx.stroke();
+
+            }
+
+        }
+
+
+        // --------------------------------
+        // UPDATE STAR
+        // --------------------------------
+
+        function updateStar(star) {
+
+            /*
+                Move star toward camera
+            */
+
+            star.z -= star.speed;
+
+
+            /*
+                Reset when it reaches
+                the viewer
+            */
+
+            if (star.z <= 1) {
+
+                star.x =
+                    (Math.random() - 0.5)
+                    * width
+                    * 2.2;
+
+                star.y =
+                    (Math.random() - 0.5)
+                    * height
+                    * 2.2;
+
+                star.z =
+                    width;
+
+                star.speed =
+                    Math.random() * 2.2
+                    + 0.8;
+
+            }
+
+        }
+
+
+        // --------------------------------
+        // ANIMATION
+        // --------------------------------
+
+        function animate() {
+
+            /*
+                Dark background
+            */
+
+            ctx.fillStyle =
+                "#090909";
+
+            ctx.fillRect(
+                0,
+                0,
+                width,
+                height
+            );
+
+
+            /*
+                Smooth mouse
+            */
+
+            smoothMouse.x +=
+                (mouse.x - smoothMouse.x)
+                * 0.035;
+
+            smoothMouse.y +=
+                (mouse.y - smoothMouse.y)
+                * 0.035;
+
+
+            /*
+                Update + draw
+            */
+
+            for (
+                let i = 0;
+                i < stars.length;
+                i++
+            ) {
+
+                updateStar(
+                    stars[i]
+                );
+
+                drawStar(
+                    stars[i]
+                );
+
+            }
+
+
+            requestAnimationFrame(
+                animate
+            );
+
+        }
+
+
+        // --------------------------------
+        // START
+        // --------------------------------
+
+        smoothMouse.x =
+            width / 2;
+
+        smoothMouse.y =
+            height / 2;
+
+        animate();
+
+    </script>
+
+</body>
+</html>

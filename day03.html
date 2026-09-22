@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Particle World</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #090909;
+            color: #f5f5f5;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .header {
+            position: fixed;
+            top: 28px;
+            left: 35px;
+            z-index: 10;
+        }
+
+        .header .number {
+            font-size: 11px;
+            letter-spacing: 3px;
+            color: #9b8cff;
+            margin-bottom: 8px;
+        }
+
+        .header h1 {
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
+        .back {
+            position: fixed;
+            top: 30px;
+            right: 35px;
+            z-index: 10;
+
+            color: #9a9a9a;
+            text-decoration: none;
+            font-size: 12px;
+
+            border: 1px solid #292929;
+            padding: 9px 14px;
+
+            transition: 0.3s ease;
+        }
+
+        .back:hover {
+            color: #f5f5f5;
+            border-color: #9b8cff;
+        }
+
+        .info {
+            position: fixed;
+            bottom: 30px;
+            left: 35px;
+            z-index: 10;
+        }
+
+        .info h2 {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 7px;
+        }
+
+        .info p {
+            font-size: 12px;
+            color: #777;
+            letter-spacing: 0.3px;
+        }
+
+        @media (max-width: 600px) {
+            .header {
+                left: 20px;
+                top: 20px;
+            }
+
+            .back {
+                right: 20px;
+                top: 20px;
+            }
+
+            .info {
+                left: 20px;
+                bottom: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="particleCanvas"></canvas>
+
+    <div class="header">
+        <div class="number">CREATIVE CODING / 03</div>
+    </div>
+
+    <a href="index.html" class="back">← Back</a>
+
+    <div class="info">
+        <h2>Particle World</h2>
+        <p>Particles, connections, distance &amp; interaction.</p>
+    </div>
+
+
+    <script>
+
+        // --------------------------------
+        // CANVAS SETUP
+        // --------------------------------
+
+        const canvas = document.getElementById("particleCanvas");
+        const ctx = canvas.getContext("2d");
+
+        let width;
+        let height;
+
+        let particles = [];
+
+        const particleCount = 100;
+
+        const connectionDistance = 130;
+
+
+        // --------------------------------
+        // MOUSE
+        // --------------------------------
+
+        const mouse = {
+            x: -1000,
+            y: -1000
+        };
+
+
+        window.addEventListener("mousemove", (event) => {
+
+            mouse.x = event.clientX;
+            mouse.y = event.clientY;
+
+        });
+
+
+        window.addEventListener("mouseleave", () => {
+
+            mouse.x = -1000;
+            mouse.y = -1000;
+
+        });
+
+
+        // --------------------------------
+        // RESIZE
+        // --------------------------------
+
+        function resizeCanvas() {
+
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+
+            createParticles();
+        }
+
+        window.addEventListener("resize", resizeCanvas);
+
+
+        // --------------------------------
+        // CREATE PARTICLES
+        // --------------------------------
+
+        function createParticles() {
+
+            particles = [];
+
+            for (let i = 0; i < particleCount; i++) {
+
+                particles.push({
+
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+
+                    radius: Math.random() * 1.8 + 0.8,
+
+                    velocityX:
+                        (Math.random() - 0.5) * 0.7,
+
+                    velocityY:
+                        (Math.random() - 0.5) * 0.7
+
+                });
+            }
+        }
+
+
+        // --------------------------------
+        // UPDATE PARTICLE
+        // --------------------------------
+
+        function updateParticle(particle) {
+
+            particle.x += particle.velocityX;
+            particle.y += particle.velocityY;
+
+
+            // Bounce from left/right
+
+            if (
+                particle.x <= 0 ||
+                particle.x >= width
+            ) {
+
+                particle.velocityX *= -1;
+
+            }
+
+
+            // Bounce from top/bottom
+
+            if (
+                particle.y <= 0 ||
+                particle.y >= height
+            ) {
+
+                particle.velocityY *= -1;
+
+            }
+
+
+            // --------------------------------
+            // MOUSE INTERACTION
+            // --------------------------------
+
+            const dx = particle.x - mouse.x;
+            const dy = particle.y - mouse.y;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+            const interactionRadius = 170;
+
+
+            if (distance < interactionRadius) {
+
+                const force =
+                    (interactionRadius - distance) /
+                    interactionRadius;
+
+                particle.velocityX +=
+                    (dx / (distance + 1)) *
+                    force *
+                    0.025;
+
+                particle.velocityY +=
+                    (dy / (distance + 1)) *
+                    force *
+                    0.025;
+            }
+
+
+            // --------------------------------
+            // SPEED LIMIT
+            // --------------------------------
+
+            const maxSpeed = 1.2;
+
+            const speed =
+                Math.sqrt(
+                    particle.velocityX *
+                    particle.velocityX +
+                    particle.velocityY *
+                    particle.velocityY
+                );
+
+
+            if (speed > maxSpeed) {
+
+                particle.velocityX =
+                    (particle.velocityX / speed) *
+                    maxSpeed;
+
+                particle.velocityY =
+                    (particle.velocityY / speed) *
+                    maxSpeed;
+
+            }
+        }
+
+
+        // --------------------------------
+        // DRAW PARTICLE
+        // --------------------------------
+
+        function drawParticle(particle) {
+
+            ctx.beginPath();
+
+            ctx.arc(
+                particle.x,
+                particle.y,
+                particle.radius,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fillStyle =
+                "rgba(245, 245, 245, 0.8)";
+
+            ctx.fill();
+        }
+
+
+        // --------------------------------
+        // DRAW CONNECTIONS
+        // --------------------------------
+
+        function drawConnections() {
+
+            for (let i = 0; i < particles.length; i++) {
+
+                for (
+                    let j = i + 1;
+                    j < particles.length;
+                    j++
+                ) {
+
+                    const particleA = particles[i];
+                    const particleB = particles[j];
+
+
+                    const dx =
+                        particleA.x - particleB.x;
+
+                    const dy =
+                        particleA.y - particleB.y;
+
+                    const distance =
+                        Math.sqrt(dx * dx + dy * dy);
+
+
+                    if (distance < connectionDistance) {
+
+                        const opacity =
+                            (1 - distance / connectionDistance) *
+                            0.32;
+
+
+                        ctx.beginPath();
+
+                        ctx.moveTo(
+                            particleA.x,
+                            particleA.y
+                        );
+
+                        ctx.lineTo(
+                            particleB.x,
+                            particleB.y
+                        );
+
+                        ctx.strokeStyle =
+                            `rgba(155, 140, 255, ${opacity})`;
+
+                        ctx.lineWidth = 0.6;
+
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+
+        // --------------------------------
+        // MOUSE CONNECTIONS
+        // --------------------------------
+
+        function drawMouseConnections() {
+
+            const mouseRadius = 190;
+
+            for (let i = 0; i < particles.length; i++) {
+
+                const particle = particles[i];
+
+                const dx =
+                    particle.x - mouse.x;
+
+                const dy =
+                    particle.y - mouse.y;
+
+                const distance =
+                    Math.sqrt(dx * dx + dy * dy);
+
+
+                if (distance < mouseRadius) {
+
+                    const opacity =
+                        (1 - distance / mouseRadius) *
+                        0.55;
+
+
+                    ctx.beginPath();
+
+                    ctx.moveTo(
+                        particle.x,
+                        particle.y
+                    );
+
+                    ctx.lineTo(
+                        mouse.x,
+                        mouse.y
+                    );
+
+                    ctx.strokeStyle =
+                        `rgba(110, 168, 255, ${opacity})`;
+
+                    ctx.lineWidth = 0.8;
+
+                    ctx.stroke();
+                }
+            }
+        }
+
+
+        // --------------------------------
+        // ANIMATION
+        // --------------------------------
+
+        function animate() {
+
+            // Smooth dark background
+
+            ctx.fillStyle =
+                "rgba(9, 9, 9, 0.28)";
+
+            ctx.fillRect(
+                0,
+                0,
+                width,
+                height
+            );
+
+
+            // Update particles
+
+            for (let i = 0; i < particles.length; i++) {
+
+                updateParticle(particles[i]);
+
+            }
+
+
+            // Connections
+
+            drawConnections();
+
+            drawMouseConnections();
+
+
+            // Particles
+
+            for (let i = 0; i < particles.length; i++) {
+
+                drawParticle(particles[i]);
+
+            }
+
+
+            requestAnimationFrame(animate);
+        }
+
+
+        // --------------------------------
+        // START
+        // --------------------------------
+
+        resizeCanvas();
+
+        requestAnimationFrame(animate);
+
+    </script>
+
+</body>
+</html>

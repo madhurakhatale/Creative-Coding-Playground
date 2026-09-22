@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Orbital Glow</title>
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #090909;
+            color: #f5f5f5;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+
+        /* --------------------------------
+           HEADER — SAME AS DAY 04
+        -------------------------------- */
+
+        .header {
+            position: fixed;
+            top: 28px;
+            left: 35px;
+            z-index: 10;
+        }
+
+        .header .number {
+            font-size: 11px;
+            letter-spacing: 3px;
+            color: #9b8cff;
+            margin-bottom: 8px;
+        }
+
+
+        /* --------------------------------
+           BACK BUTTON — SAME AS DAY 04
+        -------------------------------- */
+
+        .back {
+            position: fixed;
+            top: 30px;
+            right: 35px;
+            z-index: 10;
+
+            color: #9a9a9a;
+            text-decoration: none;
+            font-size: 12px;
+
+            border: 1px solid #292929;
+            padding: 9px 14px;
+
+            transition: 0.3s ease;
+        }
+
+        .back:hover {
+            color: #f5f5f5;
+            border-color: #9b8cff;
+        }
+
+
+        /* --------------------------------
+           INFO — SAME AS DAY 04
+        -------------------------------- */
+
+        .info {
+            position: fixed;
+            bottom: 30px;
+            left: 35px;
+            z-index: 10;
+
+            pointer-events: none;
+        }
+
+        .info h2 {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 7px;
+        }
+
+        .info p {
+            font-size: 12px;
+            color: #777;
+            letter-spacing: 0.3px;
+        }
+
+
+        /* --------------------------------
+           MOBILE
+        -------------------------------- */
+
+        @media (max-width: 600px) {
+
+            .header {
+                left: 20px;
+                top: 20px;
+            }
+
+            .back {
+                right: 20px;
+                top: 20px;
+            }
+
+            .info {
+                left: 20px;
+                bottom: 20px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- CANVAS -->
+
+    <canvas id="canvas"></canvas>
+
+
+    <!-- HEADER -->
+
+    <div class="header">
+
+        <div class="number">
+            CREATIVE CODING / 01
+        </div>
+
+    </div>
+
+
+    <!-- BACK BUTTON -->
+
+    <a href="index.html" class="back">
+        ← Back
+    </a>
+
+
+    <!-- INFO -->
+
+    <div class="info">
+
+        <h2>
+            Orbital Glow
+        </h2>
+
+        <p>
+            A simple experiment with motion, light and collision.
+        </p>
+
+    </div>
+
+
+
+    <script>
+
+
+        /* =========================
+           CANVAS SETUP
+        ========================= */
+
+        const canvas =
+            document.getElementById("canvas");
+
+        const ctx =
+            canvas.getContext("2d");
+
+
+        function resizeCanvas() {
+
+            canvas.width =
+                window.innerWidth;
+
+            canvas.height =
+                window.innerHeight;
+
+        }
+
+
+        resizeCanvas();
+
+        window.addEventListener(
+            "resize",
+            resizeCanvas
+        );
+
+
+
+        /* =========================
+           MOUSE
+        ========================= */
+
+        const mouse = {
+
+            x: canvas.width / 2,
+
+            y: canvas.height / 2
+
+        };
+
+
+        window.addEventListener(
+            "mousemove",
+            function(event) {
+
+                mouse.x =
+                    event.clientX;
+
+                mouse.y =
+                    event.clientY;
+
+            }
+        );
+
+
+
+        /* =========================
+           ORB
+        ========================= */
+
+        const orb = {
+
+            x: canvas.width / 2,
+
+            y: canvas.height / 2,
+
+            radius: 12,
+
+            velocityX: 3,
+
+            velocityY: 2
+
+        };
+
+
+
+        /* =========================
+           TRAIL
+        ========================= */
+
+        const trail = [];
+
+        const trailLength = 35;
+
+
+
+        /* =========================
+           UPDATE ORB
+        ========================= */
+
+        function updateOrb() {
+
+
+            /* Normal movement */
+
+            orb.x +=
+                orb.velocityX;
+
+            orb.y +=
+                orb.velocityY;
+
+
+
+            /* =====================
+               MOUSE INFLUENCE
+            ===================== */
+
+            const dx =
+                mouse.x - orb.x;
+
+            const dy =
+                mouse.y - orb.y;
+
+            const distance =
+                Math.sqrt(
+                    dx * dx +
+                    dy * dy
+                );
+
+
+            if (distance < 350) {
+
+                const force = 0.0008;
+
+                orb.velocityX +=
+                    dx * force;
+
+                orb.velocityY +=
+                    dy * force;
+
+            }
+
+
+
+            /* =====================
+               SPEED LIMIT
+            ===================== */
+
+            const maxSpeed = 5;
+
+
+            if (
+                orb.velocityX >
+                maxSpeed
+            ) {
+
+                orb.velocityX =
+                    maxSpeed;
+
+            }
+
+
+            if (
+                orb.velocityX <
+                -maxSpeed
+            ) {
+
+                orb.velocityX =
+                    -maxSpeed;
+
+            }
+
+
+            if (
+                orb.velocityY >
+                maxSpeed
+            ) {
+
+                orb.velocityY =
+                    maxSpeed;
+
+            }
+
+
+            if (
+                orb.velocityY <
+                -maxSpeed
+            ) {
+
+                orb.velocityY =
+                    -maxSpeed;
+
+            }
+
+
+
+            /* =====================
+               WALL COLLISION
+            ===================== */
+
+            if (
+                orb.x +
+                orb.radius >=
+                canvas.width ||
+
+                orb.x -
+                orb.radius <=
+                0
+            ) {
+
+                orb.velocityX *= -1;
+
+            }
+
+
+            if (
+                orb.y +
+                orb.radius >=
+                canvas.height ||
+
+                orb.y -
+                orb.radius <=
+                0
+            ) {
+
+                orb.velocityY *= -1;
+
+            }
+
+
+
+            /* =====================
+               SAVE TRAIL POSITION
+            ===================== */
+
+            trail.push({
+
+                x: orb.x,
+
+                y: orb.y
+
+            });
+
+
+            if (
+                trail.length >
+                trailLength
+            ) {
+
+                trail.shift();
+
+            }
+
+        }
+
+
+
+        /* =========================
+           DRAW TRAIL
+        ========================= */
+
+        function drawTrail() {
+
+
+            for (
+                let i = 0;
+                i < trail.length;
+                i++
+            ) {
+
+                const point =
+                    trail[i];
+
+                const progress =
+                    i / trail.length;
+
+                const alpha =
+                    progress * 0.35;
+
+                const size =
+                    progress *
+                    orb.radius *
+                    0.8;
+
+
+                ctx.beginPath();
+
+
+                ctx.fillStyle =
+                    `rgba(
+                        155,
+                        140,
+                        255,
+                        ${alpha}
+                    )`;
+
+
+                ctx.arc(
+
+                    point.x,
+
+                    point.y,
+
+                    size,
+
+                    0,
+
+                    Math.PI * 2
+
+                );
+
+
+                ctx.fill();
+
+            }
+
+        }
+
+
+
+        /* =========================
+           DRAW ORB
+        ========================= */
+
+        function drawOrb() {
+
+
+            /* Small glow */
+
+            const glow =
+                ctx.createRadialGradient(
+
+                    orb.x,
+
+                    orb.y,
+
+                    0,
+
+                    orb.x,
+
+                    orb.y,
+
+                    orb.radius * 2.8
+
+                );
+
+
+            glow.addColorStop(
+
+                0,
+
+                "rgba(255, 255, 255, 0.8)"
+
+            );
+
+
+            glow.addColorStop(
+
+                0.35,
+
+                "rgba(155, 140, 255, 0.35)"
+
+            );
+
+
+            glow.addColorStop(
+
+                1,
+
+                "rgba(155, 140, 255, 0)"
+
+            );
+
+
+            ctx.beginPath();
+
+            ctx.fillStyle = glow;
+
+
+            ctx.arc(
+
+                orb.x,
+
+                orb.y,
+
+                orb.radius * 2.8,
+
+                0,
+
+                Math.PI * 2
+
+            );
+
+
+            ctx.fill();
+
+
+
+            /* Main orb */
+
+            ctx.beginPath();
+
+            ctx.fillStyle =
+                "#ffffff";
+
+
+            ctx.arc(
+
+                orb.x,
+
+                orb.y,
+
+                orb.radius,
+
+                0,
+
+                Math.PI * 2
+
+            );
+
+
+            ctx.fill();
+
+        }
+
+
+
+        /* =========================
+           ANIMATION LOOP
+        ========================= */
+
+        function animate() {
+
+
+            ctx.fillStyle =
+                "rgba(9, 9, 9, 0.12)";
+
+
+            ctx.fillRect(
+
+                0,
+
+                0,
+
+                canvas.width,
+
+                canvas.height
+
+            );
+
+
+            updateOrb();
+
+            drawTrail();
+
+            drawOrb();
+
+
+            requestAnimationFrame(
+                animate
+            );
+
+        }
+
+
+
+        /* =========================
+           START
+        ========================= */
+
+        animate();
+
+
+    </script>
+
+
+</body>
+
+</html>
